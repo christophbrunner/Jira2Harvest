@@ -14,7 +14,7 @@ using IHost host = builder.Build();
 
 await Start(host.Services);
 
-await host.RunAsync();
+//await host.RunAsync();
 
 static async Task Start(IServiceProvider hostServices)
 {
