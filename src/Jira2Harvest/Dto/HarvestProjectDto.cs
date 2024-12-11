@@ -2,4 +2,5 @@
 
 public class HarvestProjectDto : HarvestBaseObject
 {
+    public required string Code { get; set; }
 }

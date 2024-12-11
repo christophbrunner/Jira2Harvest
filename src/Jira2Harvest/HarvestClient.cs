@@ -9,7 +9,7 @@ public class HarvestClient : BaseClient
     private readonly HarvestSettings _harvestSettings;
     private readonly HarvestFullUserDto _me;
 
-    private long _harvestProjectId;
+    private IDictionary<string, long> _harvestProjectIds;
 
     private readonly ConsoleService _consoleService;
 
@@ -52,10 +52,10 @@ public class HarvestClient : BaseClient
             throw new Exception(message);
         }
 
-        _harvestProjectId = allMyProjects.ProjectAssignments
-            .FirstOrDefault(x => x.TaskAssignments.Any(assignments => assignments.Task.Id == _harvestSettings.TaskId))?.Project.Id ?? 0;
+        _harvestProjectIds = allMyProjects.ProjectAssignments
+            .Where(x => x.TaskAssignments.Any(assignments => assignments.Task.Id == _harvestSettings.TaskId)).ToDictionary(x=>x.Project.Code, x=> x.Project.Id);
 
-        if (_harvestProjectId <= 0)
+        if (_harvestProjectIds.Count <= 0)
         {
             string message = "Harvest configuration Error. TaskId is invalid. Add valid TaskId";
 
@@ -63,6 +63,11 @@ public class HarvestClient : BaseClient
 
             throw new Exception(message);
         }
+    }
+
+    private long GetProjectId(int year)
+    {
+        return _harvestProjectIds.FirstOrDefault(x => x.Key.Contains(year.ToString())).Value;
     }
 
     public async Task<HarvestTaskDto> GetTask(long taskId)
@@ -105,6 +110,6 @@ public class HarvestClient : BaseClient
 
     public async Task<HarvestTimeEntriesDto> AddTimeEntry(DateTime start, decimal hours)
     {
-        return await Post<HarvestTimeEntriesDto>($"time_entries?project_id={_harvestProjectId}&task_id={_harvestSettings.TaskId}&spent_date={start:yyyy-MM-dd}&hours={hours}");
+        return await Post<HarvestTimeEntriesDto>($"time_entries?project_id={GetProjectId(start.Year)}&task_id={_harvestSettings.TaskId}&spent_date={start:yyyy-MM-dd}&hours={hours}");
     }
 }
